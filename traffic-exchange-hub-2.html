@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Traffic Exchange Hub</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="//libtl.com/sdk.js" data-zone="11144169" data-sdk="show_11144169"></script>
+<style>
+:root{
+  --bg:#070d1a;
+  --card:#0e1729;
+  --card2:#131f35;
+  --border:#1e2f4a;
+  --primary:#3b82f6;
+  --primary2:#60a5fa;
+  --green:#22c55e;
+  --green2:#4ade80;
+  --yellow:#eab308;
+  --red:#ef4444;
+  --text:#f1f5f9;
+  --sub:#64748b;
+  --sub2:#94a3b8;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  padding-bottom:72px;
+  overflow-x:hidden;
+}
+
+/* ── Splash ── */
+#splash{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  z-index:999;transition:opacity 0.4s;
+}
+#splash .logo-big{font-size:52px;margin-bottom:12px;}
+#splash h1{font-size:22px;font-weight:800;color:var(--primary2);}
+#splash p{font-size:13px;color:var(--sub2);margin-top:6px;}
+.loader{width:48px;height:4px;background:var(--border);border-radius:4px;margin-top:24px;overflow:hidden;}
+.loader::after{content:'';display:block;height:100%;width:40%;background:var(--primary);border-radius:4px;animation:load 1s ease infinite;}
+@keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
+/* ── Bottom Nav ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#080f1f;
+  border-top:1px solid var(--border);
+  display:flex;z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-btn{
+  flex:1;padding:10px 0;text-align:center;
+  cursor:pointer;border:none;background:transparent;
+  color:var(--sub);font-size:10px;font-weight:600;
+  transition:color 0.2s;letter-spacing:0.3px;
+}
+.nav-btn .ni{font-size:18px;display:block;margin-bottom:2px;}
+.nav-btn.active{color:var(--primary2);}
+
+/* ── Pages ── */
+.page{display:none;padding:12px;}
+.page.active{display:block;}
+
+/* ── Header ── */
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;
+  background:var(--card);
+  border-radius:14px;
+  border:1px solid var(--border);
+  margin-bottom:12px;
+}
+.topbar .ava{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),#7c3aed);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  flex-shrink:0;
+}
+.topbar .ti{flex:1;}
+.topbar .ti h2{font-size:14px;font-weight:700;}
+.topbar .ti p{font-size:11px;color:var(--sub2);margin-top:1px;}
+.topbar .pts-badge{
+  background:linear-gradient(135deg,var(--primary),#7c3aed);
+  border-radius:20px;padding:5px 12px;
+  font-size:12px;font-weight:700;white-space:nowrap;
+}
+
+/* ── Stats Row ── */
+.stats-row{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;margin-bottom:12px;
+}
+.stat-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:12px 8px;text-align:center;
+}
+.stat-box .sv{font-size:20px;font-weight:800;color:var(--primary2);}
+.stat-box .sl{font-size:10px;color:var(--sub2);margin-top:2px;}
+
+/* ── Section ── */
+.sec-title{
+  font-size:11px;color:var(--sub);
+  text-transform:uppercase;letter-spacing:1.2px;
+  margin:14px 0 8px;font-weight:700;
+}
+
+/* ── Surf Card ── */
+.surf-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;margin-bottom:12px;
+}
+.surf-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-bottom:1px solid var(--border);
+}
+.surf-header .site-info{flex:1;}
+.surf-header .site-info .sname{font-size:13px;font-weight:700;}
+.surf-header .site-info .surl{font-size:11px;color:var(--sub2);margin-top:2px;word-break:break-all;}
+.surf-header .pts-tag{
+  background:#1e3a5f;color:var(--primary2);
+  border-radius:8px;padding:4px 10px;
+  font-size:12px;font-weight:700;flex-shrink:0;margin-left:8px;
+}
+.surf-frame-wrap{position:relative;height:260px;background:#000;}
+.surf-frame-wrap iframe{width:100%;height:100%;border:none;}
+.surf-overlay{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#00000088;flex-direction:column;gap:8px;
+}
+.timer-ring{
+  width:64px;height:64px;border-radius:50%;
+  border:4px solid var(--border);
+  border-top-color:var(--primary);
+  animation:spin 1s linear infinite;
+  display:flex;align-items:center;justify-content:center;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.timer-num{
+  position:absolute;font-size:18px;font-weight:800;color:#fff;
+}
+.surf-footer{
+  padding:10px 14px;display:flex;
+  align-items:center;justify-content:space-between;
+}
+.surf-footer .sf-left{font-size:11px;color:var(--sub2);}
+.claim-btn{
+  background:linear-gradient(90deg,var(--green),#16a34a);
+  color:#fff;border:none;border-radius:10px;
+  padding:8px 18px;font-size:13px;font-weight:700;
+  cursor:pointer;transition:opacity 0.2s;
+}
+.claim-btn:disabled{background:var(--border);color:var(--sub);cursor:not-allowed;}
+.claim-btn:not(:disabled):active{opacity:0.8;}
+
+/* ── No Sites ── */
+.empty-state{
+  text-align:center;padding:32px 16px;
+  color:var(--sub2);font-size:13px;
+}
+.empty-state .ei{font-size:40px;margin-bottom:8px;}
+
+/* ── Campaign / Submit ── */
+.submit-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:16px;margin-bottom:12px;
+}
+.submit-card h3{font-size:14px;font-weight:700;margin-bottom:12px;}
+.form-group{margin-bottom:10px;}
+.form-group label{font-size:11px;color:var(--sub2);display:block;margin-bottom:5px;font-weight:600;}
+.form-input{
+  width:100%;background:#0a1020;border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;
+  color:var(--text);font-size:13px;outline:none;
+  transition:border-color 0.2s;
+}
+.form-input:focus{border-color:var(--primary);}
+.form-select{
+  width:100%;background:#0a1020;border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;
+  color:var(--text);font-size:13px;outline:none;
+  appearance:none;
+}
+.submit-btn{
+  width:100%;padding:13px;
+  background:linear-gradient(90deg,var(--primary),#7c3aed);
+  color:#fff;border:none;border-radius:12px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  transition:opacity 0.2s;margin-top:4px;
+}
+.submit-btn:active{opacity:0.85;}
+
+.cost-badge{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#0a1020;border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;margin-bottom:10px;
+}
+.cost-badge .cb-label{font-size:12px;color:var(--sub2);}
+.cost-badge .cb-val{font-size:13px;font-weight:700;color:var(--yellow);}
+
+/* ── My Campaigns ── */
+.camp-item{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:12px 14px;margin-bottom:8px;
+}
+.camp-item .ci-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.camp-item .ci-name{font-size:13px;font-weight:700;}
+.ci-status{
+  font-size:10px;font-weight:700;border-radius:6px;padding:3px 8px;
+}
+.ci-status.active{background:#14532d;color:var(--green2);}
+.ci-status.paused{background:#422006;color:#fb923c;}
+.camp-item .ci-stats{
+  display:flex;gap:14px;font-size:11px;color:var(--sub2);
+}
+.camp-item .ci-stats span b{color:var(--text);font-weight:700;}
+.progress-bar{
+  height:4px;background:var(--border);border-radius:4px;
+  margin-top:8px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--primary),var(--green));
+  border-radius:4px;transition:width 0.3s;
+}
+
+/* ── Earn Page ── */
+.earn-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:16px;margin-bottom:10px;
+}
+.earn-card .ec-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.earn-card .ec-icon{font-size:28px;}
+.earn-card .ec-info h3{font-size:14px;font-weight:700;}
+.earn-card .ec-info p{font-size:11px;color:var(--sub2);margin-top:2px;}
+.earn-btn{
+  width:100%;padding:12px;border:none;border-radius:10px;
+  font-size:13px;font-weight:700;cursor:pointer;transition:opacity 0.2s;color:#fff;
+}
+.earn-btn:active{opacity:0.8;}
+.earn-btn.blue{background:linear-gradient(90deg,var(--primary),#2563eb);}
+.earn-btn.orange{background:linear-gradient(90deg,#f97316,#dc2626);}
+.earn-btn.gold{background:linear-gradient(90deg,var(--yellow),#f97316);}
+
+/* ── Profile ── */
+.profile-hero{
+  background:linear-gradient(135deg,#1e3a5f,#2d1b69);
+  border-radius:16px;padding:20px;margin-bottom:12px;
+  text-align:center;border:1px solid var(--border);
+}
+.profile-hero .ph-ava{
+  width:60px;height:60px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;margin:0 auto 10px;
+}
+.profile-hero h2{font-size:16px;font-weight:800;}
+.profile-hero p{font-size:12px;color:var(--sub2);margin-top:2px;}
+.profile-hero .big-pts{
+  font-size:36px;font-weight:900;color:var(--primary2);
+  margin:12px 0 4px;
+}
+.profile-hero .pts-label{font-size:12px;color:var(--sub2);}
+
+.profile-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;
+}
+.ps-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:14px;text-align:center;
+}
+.ps-box .ps-val{font-size:22px;font-weight:800;color:var(--green);}
+.ps-box .ps-label{font-size:11px;color:var(--sub2);margin-top:3px;}
+
+.history-list .hi{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;
+}
+.hi .hi-reason{color:var(--sub2);}
+.hi .hi-pts{font-weight:700;}
+.hi .hi-pts.pos{color:var(--green2);}
+.hi .hi-pts.neg{color:var(--red);}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:80px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:#1e293b;border:1px solid var(--primary);
+  border-radius:12px;padding:9px 18px;
+  font-size:12px;color:#fff;
+  transition:transform 0.3s;z-index:9999;
+  white-space:nowrap;pointer-events:none;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── Daily Limit Bar ── */
+.limit-bar-wrap{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:12px 14px;margin-bottom:12px;
+}
+.limit-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.limit-bar-top span{font-size:11px;color:var(--sub2);}
+.limit-bar-top b{font-size:13px;font-weight:800;color:var(--primary2);}
+.limit-bar-bg{height:8px;background:var(--border);border-radius:8px;overflow:hidden;}
+.limit-bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--green));border-radius:8px;transition:width 0.4s;}
+
+
+
+
+/* ── Bulk Select ── */
+.bulk-toolbar{
+  display:none;background:#0a1020;border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;margin-bottom:10px;
+  align-items:center;justify-content:space-between;gap:8px;
+}
+.bulk-toolbar.visible{display:flex;}
+.bulk-count{font-size:12px;color:var(--sub2);}
+.bulk-count b{color:var(--primary2);}
+.bulk-actions{display:flex;gap:6px;}
+.bulk-del-btn{
+  padding:7px 14px;background:#7f1d1d;color:#fca5a5;
+  border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
+}
+.bulk-del-btn:hover{background:#991b1b;}
+.bulk-cancel-btn{
+  padding:7px 12px;background:var(--border);color:var(--sub2);
+  border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;
+}
+.saved-proxy-card{cursor:pointer;user-select:none;}
+.saved-proxy-card.selected{border-color:#60a5fa;background:#0d1e3a;}
+.proxy-checkbox{
+  width:18px;height:18px;border-radius:5px;
+  border:2px solid var(--border);background:transparent;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all 0.15s;margin-right:4px;
+}
+.proxy-checkbox.checked{background:var(--primary);border-color:var(--primary);}
+.proxy-checkbox.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:800;}
+.select-mode-btn{
+  width:100%;padding:9px;background:transparent;border:1px dashed var(--border);
+  color:var(--sub2);border-radius:10px;font-size:12px;font-weight:600;
+  cursor:pointer;margin-bottom:8px;transition:all 0.2s;
+}
+.select-mode-btn:hover{border-color:var(--primary2);color:var(--primary2);}
+.select-mode-btn.active{border-color:var(--primary2);color:var(--primary2);background:#0d1e3a;}
+
+/* ── Improved Proxy UI ── */
+.proxy-add-box{
+  background:#0a1020;border:1px solid var(--border);
+  border-radius:12px;padding:14px;margin-top:12px;
+}
+.pab-header{font-size:12px;font-weight:700;color:var(--primary2);margin-bottom:12px;letter-spacing:0.5px;}
+.type-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.type-tab{
+  flex:1;min-width:60px;padding:7px 4px;border-radius:8px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--sub2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;
+}
+.type-tab.active{background:#1e3a5f;border-color:var(--primary);color:var(--primary2);}
+.auth-toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#111827;border:1px solid var(--border);border-radius:8px;
+  padding:9px 12px;font-size:11px;color:var(--sub2);cursor:pointer;
+  margin-bottom:4px;margin-top:2px;font-weight:600;
+}
+.auth-toggle-row:hover{border-color:var(--primary);}
+.saved-proxy-card{
+  background:#0a1020;border:1px solid var(--border);
+  border-radius:12px;padding:12px;margin-bottom:8px;
+  transition:border-color 0.2s;
+}
+.saved-proxy-card.active-proxy{border-color:var(--primary);background:#0d1e3a;}
+.spc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.spc-main{flex:1;}
+.spc-type-badge{
+  font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;
+  background:#1e3a5f;color:var(--primary2);margin-right:6px;
+}
+.spc-host{font-size:13px;font-weight:700;color:var(--text);margin-top:4px;word-break:break-all;}
+.spc-meta{font-size:11px;color:var(--sub2);margin-top:3px;}
+.spc-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.spc-btn{font-size:11px;font-weight:700;border:none;border-radius:7px;padding:5px 10px;cursor:pointer;white-space:nowrap;}
+.spc-btn.use{background:#1e3a5f;color:var(--primary2);}
+.spc-btn.active-btn{background:#14532d;color:#4ade80;cursor:default;}
+.spc-btn.del{background:#3f0f0f;color:var(--red);}
+.spc-status-row{margin-top:8px;padding-top:8px;border-top:1px solid #1a2540;display:flex;align-items:center;gap:8px;font-size:11px;}
+
+/* ── Proxy Checker ── */
+.proxy-checker-box{
+  margin-top:14px;border-top:1px solid var(--border);padding-top:14px;
+}
+.check-proxy-btn{
+  width:100%;padding:11px;border:none;border-radius:10px;
+  background:linear-gradient(90deg,#0ea5e9,#6366f1);
+  color:#fff;font-size:13px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity 0.2s;
+}
+.check-proxy-btn:active{opacity:0.8;}
+.check-proxy-btn:disabled{background:var(--border);color:var(--sub);cursor:not-allowed;}
+.proxy-result-card{
+  margin-top:10px;background:#0a1020;
+  border:1px solid var(--border);border-radius:12px;padding:14px;
+  display:none;
+}
+.proxy-result-card.show{display:block;}
+.prc-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 0;border-bottom:1px solid #1a2540;font-size:12px;
+}
+.prc-row:last-child{border-bottom:none;}
+.prc-label{color:var(--sub2);font-size:11px;}
+.prc-val{font-weight:700;color:var(--text);}
+.prc-flag{font-size:18px;margin-right:4px;}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+.status-dot.ok{background:var(--green);}
+.status-dot.err{background:var(--red);}
+
+/* ── Settings Page ── */
+.settings-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;}
+.settings-section h3{font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-row .tr-info h4{font-size:13px;font-weight:600;}
+.toggle-row .tr-info p{font-size:11px;color:var(--sub2);margin-top:2px;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:24px;cursor:pointer;transition:0.3s;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.3s;}
+.toggle input:checked + .toggle-slider{background:var(--primary);}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px);}
+.proxy-fields{margin-top:12px;display:none;}
+.proxy-fields.visible{display:block;}
+.proxy-grid{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px;}
+.ua-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.ua-badge{font-size:10px;padding:5px 10px;border-radius:8px;background:#0a1020;border:1px solid var(--border);color:var(--sub2);cursor:pointer;transition:all 0.2s;}
+.ua-badge.selected{background:#1e3a5f;border-color:var(--primary);color:var(--primary2);}
+.save-settings-btn{width:100%;padding:12px;margin-top:12px;background:linear-gradient(90deg,var(--primary),#7c3aed);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;}
+.proxy-status-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;margin-left:8px;}
+.proxy-status-badge.on{background:#14532d;color:var(--green2);}
+.proxy-status-badge.off{background:#1e2f4a;color:var(--sub);}
+.info-box{background:#0a1020;border:1px solid #1e3a5f;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--sub2);line-height:1.6;}
+.info-box .ib-title{color:var(--primary2);font-weight:700;margin-bottom:4px;font-size:12px;}
+</style>
+</head>
+<body>
+
+<!-- Splash -->
+<div id="splash">
+  <div class="logo-big">🌐</div>
+  <h1>Traffic Exchange Hub</h1>
+  <p>Surf • Earn • Grow</p>
+  <div class="loader"></div>
+</div>
+
+<!-- ══ PAGE: SURF ══ -->
+<div class="page active" id="page-surf">
+  <div class="topbar">
+    <div class="ava">🌐</div>
+    <div class="ti">
+      <h2>Traffic Exchange Hub</h2>
+      <p id="userName">Loading...</p>
+    </div>
+    <div class="pts-badge">⚡ <span id="pts-header">0</span></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box"><div class="sv" id="st-surfed">0</div><div class="sl">Views Today (max 1,200)</div></div>
+    <div class="stat-box"><div class="sv" id="st-earned">0</div><div class="sl">pts Earned</div></div>
+    <div class="stat-box"><div class="sv" id="st-camps">0</div><div class="sl">My Campaigns</div></div>
+  </div>
+
+  <!-- Daily Limit Bar -->
+  <div class="limit-bar-wrap">
+    <div class="limit-bar-top">
+      <span>📊 Daily Ad View Limit</span>
+      <b><span id="lb-used">0</span> / 1,200</b>
+    </div>
+    <div class="limit-bar-bg"><div class="limit-bar-fill" id="lb-fill" style="width:0%"></div></div>
+  </div>
+  <div class="sec-title">🔥 Sites to Surf</div>
+  <div id="surfList"></div>
+</div>
+
+<!-- ══ PAGE: EARN ══ -->
+<div class="page" id="page-earn">
+  <div class="sec-title" style="margin-top:4px">Earn Points Fast</div>
+
+  <div class="earn-card">
+    <div class="ec-top">
+      <div class="ec-icon">🎯</div>
+      <div class="ec-info"><h3>Pop-up Ad</h3><p>Quick ad — instant points</p></div>
+    </div>
+    <button class="earn-btn blue" onclick="earnAd('pop',20)">Watch Ad → +20 pts</button>
+  </div>
+
+  <div class="earn-card">
+    <div class="ec-top">
+      <div class="ec-icon">📺</div>
+      <div class="ec-info"><h3>Interstitial Ad</h3><p>Full screen ad</p></div>
+    </div>
+    <button class="earn-btn orange" onclick="earnAd('interstitial',20)">Watch Ad → +20 pts</button>
+  </div>
+
+  <div class="earn-card">
+    <div class="ec-top">
+      <div class="ec-icon">🏆</div>
+      <div class="ec-info"><h3>Reward Ad</h3><p>Best reward — max points</p></div>
+    </div>
+    <button class="earn-btn gold" onclick="earnAd('pop',20)" style="color:#111">Watch Ad → +20 pts</button>
+  </div>
+
+  <div class="earn-card">
+    <div class="ec-top">
+      <div class="ec-icon">👥</div>
+      <div class="ec-info"><h3>Refer a Friend</h3><p>+50 pts per referral</p></div>
+    </div>
+    <button class="earn-btn blue" onclick="copyRef()">Copy Referral Link</button>
+  </div>
+</div>
+
+<!-- ══ PAGE: CAMPAIGN ══ -->
+<div class="page" id="page-camp">
+  <div class="sec-title" style="margin-top:4px">Submit Your Site</div>
+
+  <div class="submit-card">
+    <h3>🚀 New Campaign</h3>
+    <div class="form-group">
+      <label>Site Name</label>
+      <input class="form-input" id="siteName" placeholder="e.g. My Telegram Bot" maxlength="40"/>
+    </div>
+    <div class="form-group">
+      <label>URL / Link</label>
+      <input class="form-input" id="siteUrl" placeholder="https://t.me/yourbotusername" type="url"/>
+    </div>
+    <div class="form-group">
+      <label>Views Needed</label>
+      <select class="form-select" id="viewsNeeded" onchange="updateCost()">
+        <option value="50">50 views</option>
+        <option value="100" selected>100 views</option>
+        <option value="200">200 views</option>
+        <option value="500">500 views</option>
+        <option value="1200">1200 views (Max Daily)</option>
+      </select>
+    </div>
+    <div class="cost-badge">
+      <span class="cb-label">💰 Total Cost</span>
+      <span class="cb-val" id="costVal">2000 pts</span>
+    </div>
+    <button class="submit-btn" onclick="submitCampaign()">🚀 Launch Campaign</button>
+  </div>
+
+  <div class="sec-title">My Campaigns</div>
+  <div id="campList"></div>
+</div>
+
+<!-- ══ PAGE: PROFILE ══ -->
+<div class="page" id="page-profile">
+  <div class="profile-hero">
+    <div class="ph-ava">👤</div>
+    <h2 id="profile-name">User</h2>
+    <p id="profile-user">@username</p>
+    <div class="big-pts" id="profile-pts">0</div>
+    <div class="pts-label">Total Points</div>
+  </div>
+
+  <div class="profile-stats">
+    <div class="ps-box"><div class="ps-val" id="ps-total-surf">0</div><div class="ps-label">Total Surfed</div></div>
+    <div class="ps-box"><div class="ps-val" id="ps-total-refs">0</div><div class="ps-label">Referrals</div></div>
+  </div>
+
+  <div class="sec-title">Recent Activity</div>
+  <div class="history-list" id="historyList">
+    <div class="empty-state"><div class="ei">📋</div>No activity yet</div>
+  </div>
+</div>
+
+
+<!-- Daily Limit Bar (insert into surf page) -->
+
+<!-- ══ PAGE: SETTINGS ══ -->
+<div class="page" id="page-settings">
+  <div class="sec-title" style="margin-top:4px">⚙️ Settings & Proxy</div>
+
+  <div class="settings-section">
+    <h3>🌐 Traffic Mode <span class="proxy-status-badge off" id="proxyStatusBadge">OFF</span></h3>
+    <div class="toggle-row">
+      <div class="tr-info"><h4>Use Proxy</h4><p>HTTP/SOCKS proxy দিয়ে ট্রাফিক পাঠাও</p></div>
+      <label class="toggle"><input type="checkbox" id="proxyEnabled" onchange="toggleProxy()"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="proxy-fields" id="proxyFields">
+
+      <!-- Add New Proxy -->
+      <div class="proxy-add-box">
+        <div class="pab-header">➕ Add New Proxy</div>
+
+        <div class="form-group">
+          <label>Proxy Type</label>
+          <div class="type-tabs" id="proxyTypeTabs">
+            <button class="type-tab active" onclick="selectType('http',this)">HTTP</button>
+            <button class="type-tab" onclick="selectType('https',this)">HTTPS</button>
+            <button class="type-tab" onclick="selectType('socks4',this)">SOCKS4</button>
+            <button class="type-tab" onclick="selectType('socks5',this)">SOCKS5</button>
+          </div>
+          <input type="hidden" id="proxyType" value="http"/>
+        </div>
+
+        <div class="proxy-grid">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Host / IP Address</label>
+            <input class="form-input" id="proxyHost" placeholder="192.168.1.1 বা proxy.io"/>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Port</label>
+            <input class="form-input" id="proxyPort" placeholder="8080" type="number" min="1" max="65535"/>
+          </div>
+        </div>
+
+        <div class="auth-toggle-row" onclick="toggleAuth()">
+          <span>🔐 Authentication (Username & Password)</span>
+          <span id="authToggleIcon">▼</span>
+        </div>
+        <div id="authFields" style="display:none;">
+          <div class="form-group" style="margin-top:8px">
+            <label>Username</label>
+            <input class="form-input" id="proxyUser" placeholder="proxy username"/>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div style="position:relative;">
+              <input class="form-input" id="proxyPass" placeholder="proxy password" type="password" style="padding-right:40px;"/>
+              <button onclick="togglePassVis()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;" id="passEyeBtn">👁</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Label / Country</label>
+          <input class="form-input" id="proxyCountry" placeholder="e.g. US New York, UK London, BD Dhaka"/>
+        </div>
+
+        <button class="save-settings-btn" onclick="saveProxy()" style="background:linear-gradient(90deg,#22c55e,#16a34a);margin-top:4px;">
+          ✅ Add Proxy
+        </button>
+      </div>
+
+      <!-- Saved Proxies -->
+      <div id="savedProxiesList" style="margin-top:14px;"></div>
+
+      <!-- PAC File Generator -->
+      <div id="pacSection" style="display:none;margin-top:4px;">
+        <div class="info-box" style="border-color:#22c55e44;">
+          <div class="ib-title" style="color:#4ade80;">⚡ Browser-এ Proxy সেট করার সহজ উপায়</div>
+          নিচের PAC URL টা copy করে browser settings-এ paste করো — proxy automatically কাজ শুরু করবে।<br>
+          <b>Chrome:</b> Settings → System → Open proxy settings → Automatic config → URL paste করো<br>
+          <b>Firefox:</b> Settings → Network → Automatic proxy → URL paste করো
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="form-input" id="pacUrlDisplay" readonly style="font-size:11px;color:var(--primary2);cursor:pointer;" onclick="this.select()" placeholder="PAC URL এখানে দেখাবে..."/>
+          <button onclick="copyPacUrl()" style="flex-shrink:0;padding:10px 14px;background:#1e3a5f;color:var(--primary2);border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">📋 Copy</button>
+        </div>
+        <button onclick="downloadPac()" style="width:100%;margin-top:8px;padding:10px;background:linear-gradient(90deg,#0ea5e9,#6366f1);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+          ⬇️ Download .pac File (Direct Browser Import)
+        </button>
+      </div>
+
+      <!-- Proxy Checker -->
+      <div class="proxy-checker-box">
+        <button class="check-proxy-btn" id="checkProxyBtn" onclick="checkMyIP()">
+          🔍 Check Connection & Location
+        </button>
+        <div class="proxy-result-card" id="proxyResultCard">
+          <div class="prc-row">
+            <span class="prc-label">Status</span>
+            <span class="prc-val" id="prc-status">—</span>
+          </div>
+          <div class="prc-row">
+            <span class="prc-label">🌐 IP Address</span>
+            <span class="prc-val" id="prc-ip">—</span>
+          </div>
+          <div class="prc-row">
+            <span class="prc-label">🗺 Country</span>
+            <span class="prc-val" id="prc-country">—</span>
+          </div>
+          <div class="prc-row">
+            <span class="prc-label">🏙 City / Region</span>
+            <span class="prc-val" id="prc-city">—</span>
+          </div>
+          <div class="prc-row">
+            <span class="prc-label">🏢 ISP / Org</span>
+            <span class="prc-val" id="prc-isp">—</span>
+          </div>
+          <div class="prc-row">
+            <span class="prc-label">🔒 Proxy/VPN Detected</span>
+            <span class="prc-val" id="prc-proxy">—</span>
+          </div>
+          <div class="prc-row">
+            <span class="prc-label">⏱ Response Time</span>
+            <span class="prc-val" id="prc-ping">—</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>🕵️ User Agent Changer</h3>
+    <div class="info-box">
+      <div class="ib-title">ℹ️ User Agent কী?</div>
+      Browser নিজেকে server-এ যেভাবে পরিচয় দেয়। পরিবর্তন করলে ভিন্ন device/browser মনে হয়।
+    </div>
+    <div class="form-group"><label>Custom User Agent</label><input class="form-input" id="customUA" placeholder="Mozilla/5.0 ..."/></div>
+    <div style="font-size:11px;color:var(--sub2);margin-bottom:8px;">⚡ Quick Presets:</div>
+    <div class="ua-presets">
+      <span class="ua-badge" onclick="setUA('chrome-win',this)">🖥 Chrome Win</span>
+      <span class="ua-badge" onclick="setUA('chrome-mac',this)">🍎 Chrome Mac</span>
+      <span class="ua-badge" onclick="setUA('firefox-win',this)">🦊 Firefox</span>
+      <span class="ua-badge" onclick="setUA('safari-ios',this)">📱 Safari iOS</span>
+      <span class="ua-badge" onclick="setUA('chrome-android',this)">🤖 Android</span>
+      <span class="ua-badge" onclick="setUA('edge-win',this)">🌀 Edge</span>
+      <span class="ua-badge" onclick="setUA('bot',this)">🤖 Googlebot</span>
+    </div>
+    <button class="save-settings-btn" onclick="saveUA()">💾 Save User Agent</button>
+    <div id="currentUAInfo" style="margin-top:10px;font-size:11px;color:var(--sub2);background:#0a1020;padding:8px 10px;border-radius:8px;word-break:break-all;display:none;"></div>
+  </div>
+
+  <div class="settings-section">
+    <h3>🗑 Data</h3>
+    <div class="toggle-row">
+      <div class="tr-info"><h4>Reset Daily Counts</h4><p>আজকের view count রিসেট করো</p></div>
+      <button onclick="resetDaily()" style="background:var(--border);color:var(--sub2);border:none;border-radius:8px;padding:6px 12px;font-size:11px;cursor:pointer;">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="goPage('surf',this)"><span class="ni">🌐</span>Surf</button>
+  <button class="nav-btn" onclick="goPage('earn',this)"><span class="ni">⚡</span>Earn</button>
+  <button class="nav-btn" onclick="goPage('camp',this)"><span class="ni">🚀</span>Campaign</button>
+  <button class="nav-btn" onclick="goPage('profile',this)"><span class="ni">👤</span>Profile</button>
+  <button class="nav-btn" onclick="goPage('settings',this)"><span class="ni">⚙️</span>Settings</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var ZONE_ID = "11144169";
+var BOT_USERNAME = "TaskpayBdBot"; // ✅ বদলাও
+
+// ── Telegram ──
+var tgUser = null;
+if(window.Telegram && window.Telegram.WebApp){
+  Telegram.WebApp.ready(); Telegram.WebApp.expand();
+  tgUser = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
+}
+
+// ── State ──
+var S = JSON.parse(localStorage.getItem('texhub') || '{}');
+var today = new Date().toDateString();
+if(S.date !== today){ S.date=today; S.surfedToday=0; S.earnedToday=0; S.campViewsToday=0; }
+var DAILY_CAM_LIMIT = 1200;  // max 1200 campaign views/day
+
+S.pts        = S.pts        || 200; // শুরুতে 200 pts bonus
+S.totalSurf  = S.totalSurf  || 0;
+S.refs          = S.refs          || 0;
+  S.campViewsToday= S.campViewsToday|| 0;
+S.campaigns  = S.campaigns  || [];
+S.proxies    = S.proxies    || [];
+S.activeProxy= S.activeProxy|| null;
+S.userAgent  = S.userAgent  || '';
+S.proxyEnabled=S.proxyEnabled||false;
+S.history    = S.history    || [];
+S.surfIndex  = S.surfIndex  || 0;
+if(!S.welcomeDone){ S.welcomeDone=true; addHistory('Welcome Bonus!',200,'pos'); }
+save();
+
+function save(){
+  localStorage.setItem('texhub', JSON.stringify(S));
+  document.getElementById('pts-header').textContent = S.pts;
+  document.getElementById('st-surfed').textContent  = S.surfedToday;
+  document.getElementById('st-earned').textContent  = S.earnedToday;
+  document.getElementById('st-camps').textContent   = S.campaigns.length;
+  document.getElementById('profile-pts').textContent= S.pts;
+  // Limit bar
+  var pct=Math.min(100,Math.round((S.campViewsToday/DAILY_CAM_LIMIT)*100));
+  var lbUsed=document.getElementById('lb-used');
+  var lbFill=document.getElementById('lb-fill');
+  if(lbUsed) lbUsed.textContent=S.campViewsToday;
+  if(lbFill){ lbFill.style.width=pct+'%'; lbFill.style.background=pct>=100?'#ef4444':pct>=80?'linear-gradient(90deg,#eab308,#ef4444)':'linear-gradient(90deg,var(--primary),var(--green))'; }
+  document.getElementById('ps-total-surf').textContent = S.totalSurf;
+  document.getElementById('ps-total-refs').textContent = S.refs;
+  if(tgUser){
+    var n = tgUser.first_name || tgUser.username || 'User';
+    var u = '@'+(tgUser.username||tgUser.id);
+    document.getElementById('userName').textContent    = u;
+    document.getElementById('profile-name').textContent= n;
+    document.getElementById('profile-user').textContent= u;
+  }
+}
+
+function addHistory(reason, pts, type){
+  S.history.unshift({reason,pts,type,time:new Date().toLocaleTimeString()});
+  if(S.history.length > 30) S.history.pop();
+}
+
+// ── Demo Sites (real campaigns + demo) ──
+var demoSites = [
+  {name:'Telegram Bot Demo',url:'https://telegram.org',pts:5,views:100,done:0},
+  {name:'Tech News BD',url:'https://example.com',pts:6,views:200,done:40},
+  {name:'Earn Money BD',url:'https://example.com',pts:7,views:150,done:20},
+];
+
+function getSurfSites(){
+  var sites = [...demoSites];
+  S.campaigns.forEach(function(c){
+    if(c.remaining > 0) sites.push({name:c.name,url:c.url,pts:2,views:c.views,done:c.views-c.remaining});
+  });
+  return sites;
+}
+
+var activeSurf = null;
+var surfTimer  = null;
+var surfSecs   = 15;
+
+function renderSurf(){
+  var sites = getSurfSites();
+  if(!sites.length){
+    document.getElementById('surfList').innerHTML =
+      '<div class="empty-state"><div class="ei">🌐</div>No sites to surf right now.<br>Add a campaign to see sites!</div>';
+    return;
+  }
+  // Check daily limit
+  if(S.campViewsToday >= DAILY_CAM_LIMIT){
+    document.getElementById('surfList').innerHTML=
+      '<div class="empty-state"><div class="ei">🌙</div><b style="color:var(--yellow)">Daily Limit Reached!</b><br><br>আজকের ১,২০০ views শেষ।<br>কাল সকালে আবার শুরু করো।</div>';
+    return;
+  }
+  var idx = S.surfIndex % sites.length;
+  var site = sites[idx];
+  var proxyBadge='';
+  if(S.proxyEnabled&&S.activeProxy){
+    proxyBadge='<span style="font-size:10px;background:#14532d;color:#4ade80;padding:2px 8px;border-radius:6px;margin-left:6px;">🛡 '+S.activeProxy.type.toUpperCase()+' · '+S.activeProxy.country+'</span>';
+  }
+  activeSurf = site;
+  surfSecs = 23;
+
+  var html = '<div class="surf-card">'+
+    '<div class="surf-header">'+
+      '<div class="site-info">'+
+        '<div class="sname">'+site.name+proxyBadge+'</div>'+
+        '<div class="surl">'+site.url+'</div>'+
+      '</div>'+
+      '<div class="pts-tag">+20 pts</div>'+
+    '</div>'+
+    '<div class="surf-frame-wrap">'+
+      '<iframe id="surfFrame" src="'+site.url+'" sandbox="allow-scripts allow-same-origin allow-forms" loading="lazy"></iframe>'+
+      '<div class="surf-overlay" id="surfOverlay">'+
+        '<div class="timer-ring" style="position:relative">'+
+          '<span class="timer-num" id="timerNum">23</span>'+
+        '</div>'+
+        '<span style="font-size:12px;color:#ccc">Viewing site...</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="surf-footer">'+
+      '<div class="sf-left">Progress: '+(site.done||0)+'/'+site.views+' views</div>'+
+      '<button class="claim-btn" id="claimBtn" disabled onclick="claimSurf()">⏳ Wait...</button>'+
+    '</div>'+
+    '<div class="progress-bar"><div class="progress-fill" style="width:'+Math.min(100,Math.round(((site.done||0)/site.views)*100))+'%"></div></div>'+
+  '</div>';
+
+  // Next site button
+  html += '<button onclick="nextSite()" style="width:100%;padding:11px;background:var(--card);border:1px solid var(--border);color:var(--sub2);border-radius:12px;font-size:13px;cursor:pointer;margin-bottom:8px;">⏭ Skip to Next Site</button>';
+
+  document.getElementById('surfList').innerHTML = html;
+  startSurfTimer();
+}
+
+function startSurfTimer(){
+  clearInterval(surfTimer);
+  surfSecs = 23;
+  surfTimer = setInterval(function(){
+    surfSecs--;
+    var el = document.getElementById('timerNum');
+    if(el) el.textContent = surfSecs;
+    if(surfSecs <= 0){
+      clearInterval(surfTimer);
+      var ov = document.getElementById('surfOverlay');
+      if(ov) ov.style.display='none';
+      var btn = document.getElementById('claimBtn');
+      if(btn){ btn.disabled=false; btn.textContent='✅ Claim +'+PTS_PER_VIEW+' pts'; }
+    }
+  },1000);
+}
+
+function claimSurf(){
+  
+  if(S.campViewsToday >= DAILY_CAM_LIMIT){ showToast("⚠️ আজকের ১,২০০ view limit শেষ! কাল আসো 🌙"); renderSurf(); return; }
+  if(!activeSurf) return;
+  var pts = PTS_PER_VIEW;
+  S.pts += pts;
+  S.surfedToday   += 1;
+  S.campViewsToday += 1;
+  S.earnedToday += pts;
+  S.totalSurf   += 1;
+  S.surfIndex   += 1;
+  addHistory('Surfed: '+activeSurf.name, pts, 'pos');
+  // Update campaign views
+  S.campaigns.forEach(function(c){
+    if(c.name===activeSurf.name && c.remaining>0) c.remaining--;
+  });
+  save();
+  renderHistory();
+  showToast('✅ +'+pts+' pts earned!');
+  // Ad on claim
+  var fn = window['show_'+ZONE_ID];
+  if(fn) fn('pop').catch(function(){});
+  setTimeout(renderSurf, 800);
+}
+
+function nextSite(){
+  S.surfIndex += 1;
+  clearInterval(surfTimer);
+  save();
+  renderSurf();
+}
+
+// ── Earn Ads ──
+function earnAd(type, pts){
+  showToast('⏳ Loading ad...');
+  var fn = window['show_'+ZONE_ID];
+  if(!fn){ showToast('❌ SDK not loaded'); return; }
+  fn(type)
+    .then(function(){ giveEarnPts(pts); })
+    .catch(function(){
+      fn('pop').then(function(){ giveEarnPts(pts); })
+               .catch(function(){ showToast('⚠️ No ad available, try later'); });
+    });
+}
+
+function giveEarnPts(pts){
+  if(S.earnedToday >= 2000){ showToast("⚠️ আজকের limit শেষ! কাল আবার এসো 🌙"); return; }
+  S.pts += pts;
+  S.earnedToday += pts;
+  addHistory('Ad Reward', pts, 'pos');
+  save();
+  renderHistory();
+  showToast('✅ +'+pts+' pts earned!');
+}
+
+// ── Campaign ──
+
+function updateCost(){
+  var v = parseInt(document.getElementById('viewsNeeded').value);
+  document.getElementById('costVal').textContent = (v*PTS_PER_VIEW)+' pts';
+}
+
+function submitCampaign(){
+  var name = document.getElementById('siteName').value.trim();
+  var url  = document.getElementById('siteUrl').value.trim();
+  var views= parseInt(document.getElementById('viewsNeeded').value);
+  var cost = views * PTS_PER_VIEW;
+  if(!name){ showToast('⚠️ Enter site name'); return; }
+  if(!url || !url.startsWith('http')){ showToast('⚠️ Enter valid URL (https://)'); return; }
+  if(S.pts < cost){ showToast('❌ Not enough pts! Need '+cost+' pts'); return; }
+  S.pts -= cost;
+  var camp = {id:Date.now(),name,url,views,remaining:views,cost,created:new Date().toLocaleDateString()};
+  S.campaigns.unshift(camp);
+  addHistory('Campaign: '+name, cost, 'neg');
+  save();
+  renderCamps();
+  renderHistory();
+  showToast('🚀 Campaign launched!');
+  document.getElementById('siteName').value='';
+  document.getElementById('siteUrl').value='';
+  var fn = window['show_'+ZONE_ID];
+  if(fn) fn('pop').catch(function(){});
+}
+
+function renderCamps(){
+  var el = document.getElementById('campList');
+  if(!S.campaigns.length){
+    el.innerHTML='<div class="empty-state"><div class="ei">🚀</div>No campaigns yet</div>';
+    return;
+  }
+  el.innerHTML = S.campaigns.map(function(c){
+    var pct = Math.round(((c.views-c.remaining)/c.views)*100);
+    var active = c.remaining > 0;
+    return '<div class="camp-item">'+
+      '<div class="ci-top">'+
+        '<div class="ci-name">'+c.name+'</div>'+
+        '<div class="ci-status '+(active?'active':'paused')+'">'+(active?'ACTIVE':'DONE')+'</div>'+
+      '</div>'+
+      '<div class="ci-stats">'+
+        '<span>👁 <b>'+(c.views-c.remaining)+'/'+c.views+'</b> views</span>'+
+        '<span>📅 <b>'+c.created+'</b></span>'+
+      '</div>'+
+      '<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div>'+
+    '</div>';
+  }).join('');
+}
+
+// ── Referral ──
+function copyRef(){
+  var uid = tgUser ? tgUser.id : 'user';
+  var link = 'https://t.me/'+BOT_USERNAME+'?start=ref_'+uid;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(link).then(function(){ showToast('✅ Link copied!'); });
+  } else {
+    var ta=document.createElement('textarea');
+    ta.value=link; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✅ Link copied!');
+  }
+  var fn = window['show_'+ZONE_ID];
+  if(fn) fn('pop').catch(function(){});
+}
+
+// ── History ──
+function renderHistory(){
+  var el = document.getElementById('historyList');
+  if(!S.history.length){
+    el.innerHTML='<div class="empty-state"><div class="ei">📋</div>No activity yet</div>';
+    return;
+  }
+  el.innerHTML = S.history.slice(0,15).map(function(h){
+    return '<div class="hi">'+
+      '<span class="hi-reason">'+h.reason+'<br><span style="font-size:10px;color:var(--sub)">'+h.time+'</span></span>'+
+      '<span class="hi-pts '+h.type+'">'+(h.type==='pos'?'+':'-')+h.pts+' pts</span>'+
+    '</div>';
+  }).join('');
+}
+
+// ── Page Nav ──
+function goPage(name,btn){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='surf') renderSurf();
+  if(name==='camp'){ renderCamps(); updateCost(); }
+  if(name==='settings') loadSettingsUI();
+  if(name==='profile') renderHistory();
+}
+
+// ── Toast ──
+var tt;
+function showToast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(tt);
+  tt=setTimeout(function(){el.classList.remove('show');},2800);
+}
+
+
+// ════════════════
+// PROXY SYSTEM
+// ════════════════
+var UA_LIST = {
+  'chrome-win':   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'chrome-mac':   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'firefox-win':  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+  'safari-ios':   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+  'chrome-android':'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36',
+  'edge-win':     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0',
+  'bot':          'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+};
+
+function toggleProxy(){
+  var en = document.getElementById('proxyEnabled').checked;
+  document.getElementById('proxyFields').classList.toggle('visible', en);
+  var badge = document.getElementById('proxyStatusBadge');
+  badge.className='proxy-status-badge '+(en?'on':'off');
+  badge.textContent = en?'ON':'OFF';
+  S.proxyEnabled = en;
+  if(!en) S.activeProxy = null;
+  save();
+  if(document.getElementById('page-surf').classList.contains('active')) renderSurf();
+}
+
+function selectType(val, btn){
+  document.querySelectorAll('.type-tab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  document.getElementById('proxyType').value = val;
+}
+
+function toggleAuth(){
+  var f = document.getElementById('authFields');
+  var ic = document.getElementById('authToggleIcon');
+  var visible = f.style.display !== 'none';
+  f.style.display = visible ? 'none' : 'block';
+  ic.textContent = visible ? '▼' : '▲';
+}
+
+function togglePassVis(){
+  var inp = document.getElementById('proxyPass');
+  var btn = document.getElementById('passEyeBtn');
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+
+function saveProxy(){
+  var host    = document.getElementById('proxyHost').value.trim();
+  var port    = document.getElementById('proxyPort').value.trim();
+  var type    = document.getElementById('proxyType').value;
+  var user    = document.getElementById('proxyUser') ? document.getElementById('proxyUser').value.trim() : '';
+  var pass    = document.getElementById('proxyPass') ? document.getElementById('proxyPass').value.trim() : '';
+  var country = document.getElementById('proxyCountry').value.trim() || 'Unknown';
+  if(!host){ showToast('⚠️ Host / IP দাও'); return; }
+  if(!port || isNaN(port)){ showToast('⚠️ Port নম্বর দাও'); return; }
+  var proxy = {id:Date.now(),host:host,port:port,type:type,user:user,pass:pass,country:country,added:new Date().toLocaleDateString()};
+  S.proxies.unshift(proxy);
+  if(S.proxies.length>20) S.proxies.pop();
+  S.activeProxy = proxy;
+  S.proxyEnabled = true;
+  document.getElementById('proxyEnabled').checked = true;
+  document.getElementById('proxyFields').classList.add('visible');
+  var badge = document.getElementById('proxyStatusBadge');
+  badge.className='proxy-status-badge on'; badge.textContent='ON';
+  save();
+  renderSavedProxies();
+  showToast('✅ Proxy added & activated!');
+  document.getElementById('proxyHost').value='';
+  document.getElementById('proxyPort').value='';
+  if(document.getElementById('proxyUser')) document.getElementById('proxyUser').value='';
+  if(document.getElementById('proxyPass')) document.getElementById('proxyPass').value='';
+  document.getElementById('proxyCountry').value='';
+  if(document.getElementById('page-surf').classList.contains('active')) renderSurf();
+}
+
+function useProxy(id){
+  var p = S.proxies.find(function(x){ return x.id===id; });
+  if(!p) return;
+  S.activeProxy = p;
+  S.proxyEnabled = true;
+  document.getElementById('proxyEnabled').checked = true;
+  document.getElementById('proxyFields').classList.add('visible');
+  var b = document.getElementById('proxyStatusBadge');
+  b.className='proxy-status-badge on'; b.textContent='ON';
+  save();
+  renderSavedProxies();
+  showToast('✅ Active: '+p.type.toUpperCase()+' '+p.host+':'+p.port);
+  if(document.getElementById('page-surf').classList.contains('active')) renderSurf();
+}
+
+function deleteProxy(id){
+  S.proxies = S.proxies.filter(function(x){ return x.id!==id; });
+  if(S.activeProxy && S.activeProxy.id===id){
+    S.activeProxy = S.proxies[0] || null;
+    if(!S.activeProxy) S.proxyEnabled = false;
+  }
+  save();
+  renderSavedProxies();
+  showToast('🗑 Proxy removed');
+  if(document.getElementById('page-surf').classList.contains('active')) renderSurf();
+}
+
+var selectMode = false;
+var selectedIds = [];
+
+function toggleSelectMode(){
+  selectMode = !selectMode;
+  selectedIds = [];
+  renderSavedProxies();
+  var tb = document.getElementById('bulkToolbar');
+  if(tb) tb.classList.remove('visible');
+}
+
+function toggleSelectProxy(id, el){
+  if(!selectMode) return;
+  var idx = selectedIds.indexOf(id);
+  if(idx === -1){
+    selectedIds.push(id);
+    el.classList.add('selected');
+  } else {
+    selectedIds.splice(idx,1);
+    el.classList.remove('selected');
+  }
+  updateBulkToolbar();
+}
+
+function selectAllProxies(){
+  selectedIds = S.proxies.map(function(p){ return p.id; });
+  renderSavedProxies();
+  updateBulkToolbar();
+}
+
+function updateBulkToolbar(){
+  var tb = document.getElementById('bulkToolbar');
+  var cnt = document.getElementById('bulkCount');
+  if(!tb) return;
+  if(selectedIds.length > 0){
+    tb.classList.add('visible');
+    if(cnt) cnt.innerHTML = '<b>'+selectedIds.length+'</b> টি proxy selected';
+  } else {
+    tb.classList.remove('visible');
+  }
+}
+
+function bulkDelete(){
+  if(!selectedIds.length){ showToast('⚠️ কোনো proxy select করোনি'); return; }
+  var count = selectedIds.length;
+  S.proxies = S.proxies.filter(function(p){ return selectedIds.indexOf(p.id)===-1; });
+  if(S.activeProxy && selectedIds.indexOf(S.activeProxy.id)!==-1){
+    S.activeProxy = S.proxies[0] || null;
+    if(!S.activeProxy) S.proxyEnabled = false;
+  }
+  selectedIds = [];
+  selectMode = false;
+  save();
+  renderSavedProxies();
+  var tb = document.getElementById('bulkToolbar');
+  if(tb) tb.classList.remove('visible');
+  showToast('🗑 '+count+' টি proxy মুছে ফেলা হয়েছে');
+  if(document.getElementById('page-surf').classList.contains('active')) renderSurf();
+}
+
+function renderSavedProxies(){
+  var el = document.getElementById('savedProxiesList');
+  var pac = document.getElementById('pacSection');
+  if(!el) return;
+  if(!S.proxies.length){
+    el.innerHTML='';
+    if(pac) pac.style.display='none';
+    return;
+  }
+  if(pac) pac.style.display='block';
+
+  var h = '';
+
+  // Header row with count + select mode toggle
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+    +'<span style="font-size:11px;color:var(--sub2);font-weight:700;text-transform:uppercase;letter-spacing:1px;">💾 Saved Proxies ('+S.proxies.length+')</span>'
+    +'<button class="select-mode-btn '+(selectMode?'active':'')+'" style="width:auto;padding:5px 12px;margin:0;" onclick="toggleSelectMode()">'
+      +(selectMode ? '✕ Cancel' : '☑ Select')
+    +'</button>'
+  +'</div>';
+
+  // Bulk toolbar
+  h += '<div class="bulk-toolbar" id="bulkToolbar">'
+    +'<span class="bulk-count" id="bulkCount"><b>0</b> টি selected</span>'
+    +'<div class="bulk-actions">'
+      +'<button class="bulk-cancel-btn" onclick="selectAllProxies()">সব select</button>'
+      +'<button class="bulk-del-btn" onclick="bulkDelete()">🗑 Delete Selected</button>'
+    +'</div>'
+  +'</div>';
+
+  // Proxy cards
+  S.proxies.forEach(function(p){
+    var act = S.activeProxy && S.activeProxy.id===p.id;
+    var isSel = selectedIds.indexOf(p.id) !== -1;
+    var detected = p.detectedCountry ? ' · 🌐 '+p.detectedCountry : '';
+
+    h += '<div class="saved-proxy-card '+(act?'active-proxy ':'')+( isSel?'selected':'')+'" '
+      +(selectMode ? 'onclick="toggleSelectProxy('+p.id+', this)"' : '')+'>'
+      +'<div class="spc-top">'
+        // Checkbox (only in select mode)
+        +(selectMode ? '<div class="proxy-checkbox '+(isSel?'checked':'')+'"></div>' : '')
+        +'<div class="spc-main">'
+          +'<div><span class="spc-type-badge">'+p.type.toUpperCase()+'</span>'
+            +(act?'<span style="font-size:10px;color:#4ade80;font-weight:700;">● ACTIVE</span>':'')
+          +'</div>'
+          +'<div class="spc-host">'+p.host+' : '+p.port+'</div>'
+          +'<div class="spc-meta">🏷 '+p.country+(p.user?'  🔐 Auth':'  🔓 No Auth')+detected+'</div>'
+        +'</div>'
+        // Action buttons (only when NOT in select mode)
+        +(!selectMode
+          ? '<div class="spc-actions">'
+              +(act
+                ? '<span class="spc-btn active-btn">✅ Active</span>'
+                : '<button class="spc-btn use" onclick="useProxy('+p.id+')">▶ Use</button>'
+              )
+              +'<button class="spc-btn del" onclick="event.stopPropagation();deleteProxy('+p.id+')">🗑</button>'
+            +'</div>'
+          : ''
+        )
+      +'</div>'
+    +'</div>';
+  });
+
+  el.innerHTML = h;
+
+  // Restore bulk toolbar state if in select mode
+  if(selectMode && selectedIds.length > 0) updateBulkToolbar();
+  updatePacUrl();
+}
+
+function updatePacUrl(){
+  var p = S.activeProxy;
+  var el = document.getElementById('pacUrlDisplay');
+  if(!el || !p) return;
+  el.value = 'data:application/x-ns-proxy-autoconfig;base64,'+btoa(generatePac(p));
+}
+
+function generatePac(p){
+  var proxyStr;
+  if(p.type==='socks4') proxyStr='SOCKS4 '+p.host+':'+p.port;
+  else if(p.type==='socks5') proxyStr='SOCKS5 '+p.host+':'+p.port;
+  else proxyStr='PROXY '+p.host+':'+p.port;
+  return 'function FindProxyForURL(url, host) {\n  return "'+proxyStr+'; DIRECT";\n}';
+}
+
+function copyPacUrl(){
+  var el = document.getElementById('pacUrlDisplay');
+  if(!el||!el.value){ showToast('⚠️ আগে proxy save করো'); return; }
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(el.value).then(function(){ showToast('✅ PAC URL copied!'); });
+  } else {
+    el.select(); document.execCommand('copy'); showToast('✅ PAC URL copied!');
+  }
+}
+
+function downloadPac(){
+  var p = S.activeProxy;
+  if(!p){ showToast('⚠️ আগে proxy select করো'); return; }
+  var content = generatePac(p);
+  var blob = new Blob([content], {type:'application/x-ns-proxy-autoconfig'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'proxy-'+p.host+'-'+p.port+'.pac';
+  a.click();
+  showToast('✅ PAC file downloaded!');
+}
+
+function setUA(key,el){
+  document.querySelectorAll('.ua-badge').forEach(function(b){b.classList.remove('selected');});
+  el.classList.add('selected');
+  document.getElementById('customUA').value=UA_LIST[key]||'';
+}
+
+function saveUA(){
+  var ua=document.getElementById('customUA').value.trim();
+  if(!ua){showToast('⚠️ User agent দাও');return;}
+  S.userAgent=ua; save();
+  var info=document.getElementById('currentUAInfo');
+  info.textContent='✅ Active: '+ua; info.style.display='block';
+  showToast('✅ User Agent saved!');
+}
+
+function resetDaily(){
+  S.surfedToday=0; S.earnedToday=0; S.campViewsToday=0;
+  save(); showToast('✅ Daily counts reset!');
+  if(document.getElementById('page-surf').classList.contains('active')) renderSurf();
+}
+
+
+// ── Proxy / IP Checker ──
+function checkMyIP(){
+  var btn = document.getElementById('checkProxyBtn');
+  var card = document.getElementById('proxyResultCard');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> Checking...';
+  card.classList.add('show');
+  // Set loading state
+  ['prc-status','prc-ip','prc-country','prc-city','prc-isp','prc-proxy','prc-ping'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.textContent = '...';
+  });
+  var t0 = Date.now();
+  fetch('https://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,isp,org,query,proxy,hosting', {cache:'no-store'})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var ping = Date.now() - t0;
+      var ok = d.status === 'success';
+      var flag = ok ? countryFlag(d.countryCode) : '❓';
+
+      document.getElementById('prc-status').innerHTML =
+        '<span class="status-dot '+(ok?'ok':'err')+'"></span>'+(ok?'✅ Connected':'❌ Failed');
+      document.getElementById('prc-ip').textContent      = d.query || '—';
+      document.getElementById('prc-country').textContent = ok ? flag+' '+d.country+' ('+d.countryCode+')' : '—';
+      document.getElementById('prc-city').textContent    = ok ? (d.city||'')+(d.regionName?', '+d.regionName:'') : '—';
+      document.getElementById('prc-isp').textContent     = ok ? (d.isp||d.org||'—') : '—';
+      var proxyDetected = d.proxy || d.hosting;
+      document.getElementById('prc-proxy').innerHTML     = ok
+        ? (proxyDetected ? '<span style="color:var(--green2);">✅ Yes (Proxy/VPN)</span>' : '<span style="color:var(--sub2);">❌ No (Direct)</span>')
+        : '—';
+      document.getElementById('prc-ping').textContent    = ping + ' ms';
+
+      // Update active proxy country if enabled
+      if(S.proxyEnabled && S.activeProxy && ok){
+        S.activeProxy.detectedCountry = d.country;
+        save();
+      }
+      showToast(ok ? '🌐 Connected via '+flag+' '+d.country : '❌ Check failed');
+    })
+    .catch(function(err){
+      document.getElementById('prc-status').innerHTML='<span class="status-dot err"></span>❌ Error';
+      document.getElementById('prc-ip').textContent='Request failed';
+      showToast('❌ Could not reach ip-api.com');
+    })
+    .finally(function(){
+      btn.disabled = false;
+      btn.innerHTML = '🔍 Check Connection & Location';
+    });
+}
+
+function countryFlag(code){
+  if(!code || code.length!==2) return '🌐';
+  // Convert country code to flag emoji
+  return String.fromCodePoint(...code.toUpperCase().split('').map(function(c){ return c.charCodeAt(0)+127397; }));
+}
+
+function loadSettingsUI(){
+  document.getElementById('proxyEnabled').checked=S.proxyEnabled;
+  document.getElementById('proxyFields').classList.toggle('visible',S.proxyEnabled);
+  var b=document.getElementById('proxyStatusBadge');
+  b.className='proxy-status-badge '+(S.proxyEnabled?'on':'off');
+  b.textContent=S.proxyEnabled?'ON':'OFF';
+  if(S.userAgent){
+    document.getElementById('customUA').value=S.userAgent;
+    var info=document.getElementById('currentUAInfo');
+    info.textContent='✅ Active: '+S.userAgent; info.style.display='block';
+  }
+  renderSavedProxies();
+}
+
+// ── Auto Ad on load ──
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var fn=window['show_'+ZONE_ID];
+    if(fn) fn('pop').catch(function(){});
+  },3000);
+  setTimeout(function(){
+    document.getElementById('splash').style.opacity='0';
+    setTimeout(function(){document.getElementById('splash').style.display='none';},400);
+    save(); renderSurf(); renderCamps(); renderHistory();
+  },1800);
+});
+</script>
+</body>
+</html>
